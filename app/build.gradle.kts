@@ -12,8 +12,8 @@ android {
         applicationId = "dev.puck.launcher"
         minSdk = 30
         targetSdk = 36
-        versionCode = 27
-        versionName = "0.7.0"
+        versionCode = 28
+        versionName = "0.7.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }

@@ -33,6 +33,15 @@ class CompanionUiTest {
             try {
                 scenario.onActivity {engine.update.value="Generated Dobby swipe fixture";engine.status.value="Reply ready"}
                 val rect=android.graphics.Rect().also(waitNode("Generated Dobby swipe fixture")::getBoundsInScreen)
+                fun avatar(n:android.view.accessibility.AccessibilityNodeInfo?):android.view.accessibility.AccessibilityNodeInfo? {
+                    if(n==null)return null
+                    if(n.stateDescription?.toString()=="Looking up at messages")return n
+                    for(i in 0 until n.childCount)avatar(n.getChild(i))?.let {return it}
+                    return null
+                }
+                val pet=android.graphics.Rect().also((avatar(ui.rootInActiveWindow)?:error("Reply avatar not docked"))::getBoundsInScreen)
+                assertTrue("Reply avatar not on left",pet.left<60)
+                assertTrue("Reply text overlaps avatar",rect.bottom<=pet.top)
                 val start=android.os.SystemClock.uptimeMillis()
                 fun touch(action:Int,x:Float,t:Long){val event=android.view.MotionEvent.obtain(start,t,action,x,rect.centerY().toFloat(),0);try{ui.injectInputEvent(event,true)}finally{event.recycle()}}
                 val x0=rect.left+20f;val x1=rect.right-5f

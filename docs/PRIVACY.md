@@ -21,6 +21,10 @@ account; Muse's own privacy and service terms apply there.
 - Notification access is optional. Ordinary notification previews are stored in
   a bounded private inbox. They are not sent to Muse or interpreted as commands.
   Swipe/Clear all also dismiss clearable source notifications on the phone.
+  Optional tray mirroring automatically dismisses ordinary clearable Android
+  alerts after saving their private bubbles. Calls, alarms and ongoing alerts
+  remain. Retained bubbles survive source cancellation and listener reconnect,
+  until you swipe/Clear all or clear local app data. This is off by default.
 - SDK and device credentials are encrypted with Android Keystore; Android backup
   is disabled. The maintainer receives no copy. Forget removes local connection
   secrets; remove Muse Launcher in Muse Devices for server-side revocation.

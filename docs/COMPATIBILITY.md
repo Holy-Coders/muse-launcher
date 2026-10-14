@@ -5,11 +5,11 @@
 | Install | Android 11 / API 30+, arm64-v8a or x86_64. 32-bit-only phones unsupported. |
 | Avatar gestures | Microphone permission; no special hardware mapping or root. |
 | Photos/video | Camera hardware and permission; CameraX capability varies. SD MP4, 8 MB cap. |
-| Muse pairing | Personal token, internet, BLE advertising and a second signed-in Muse phone. |
+| Muse pairing | Personal token, internet, BLE advertising and a second signed-in Muse phone for initial setup only. |
 | Home | Optional standard Android Home selection; ordinary app use also supported. |
 | Hardware hold | An observable extra key, three physical press/release pairs, unchanged firmware. |
 | Locked hardware | Not universally supported or certified; no automatic PIN bypass or rooting. |
-| Notifications | Optional Android notification-listener access; ongoing/protected alerts excluded. |
+| Notifications | Optional Android notification-listener access; ongoing/protected alerts excluded. Optional tray mirroring occurs after posting. |
 | Phone actions | Installed supported handlers; Call/Send remain with the destination app. |
 | Captions | Bundled offline English model; captions are an untrusted preview. |
 | Read-aloud | Installed Android TTS voices; no verified Muse voice API. |

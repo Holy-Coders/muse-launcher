@@ -155,7 +155,7 @@ class ApplianceActivity:ComponentActivity() {
                             val interacting=status=="Listening" || busy
                             val idle=!interacting && notification==null && update.isBlank() && pendingCall==null && pendingPhone==null && photo==null && speechMessage.isBlank()
                             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-                            val docked=notification!=null && !interacting
+                            val docked=(notification!=null || update.isNotBlank()) && !interacting
                             val petSize=if(docked)96.dp else if(idle)minOf(280.dp,maxWidth,(maxHeight-140.dp).coerceAtLeast(72.dp)) else if(interacting)72.dp else if(update.isNotBlank())120.dp else 180.dp
                             Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
@@ -228,7 +228,7 @@ class ApplianceActivity:ComponentActivity() {
                             if(photo!=null) {Text("Photo attached to your next question");TextButton(onClick={photo?.delete();engine.photo.value=null}) {Text("Remove photo")}}
                             }
                             AvatarControl(Modifier.align(if(docked)androidx.compose.ui.AbsoluteAlignment.BottomLeft else if(idle)Alignment.Center else Alignment.TopCenter).size(petSize)
-                                .semantics {stateDescription=if(docked)"Looking up at notifications" else "Ready for input"},
+                                .semantics {stateDescription=if(docked)"Looking up at messages" else "Ready for input"},
                                 toggle={if(engine.avatarRecording)engine.endAvatarVoice() else startAvatarVoice()},start=::startAvatarVoice,end=engine::endAvatarVoice,
                                 camera={engine.cancelAvatarVoice();engine.cameraGesture.value++},cancel=engine::cancelAvatarVoice) {
                                 Pet(if(speaking)"Speaking" else if(unread>0 && !interacting)"New update" else status,portrait,if(unread>0)"cheerful" else mood,Modifier.fillMaxSize(),lookUp=docked)
@@ -343,6 +343,12 @@ class ApplianceActivity:ComponentActivity() {
             Text(if(MuseNotifications.allowed(this@ApplianceActivity))"Notification access enabled" else "Notification access is off")
             Text("Your companion presents notifications from all apps. Previews stay on this phone and never execute commands. Swipe or Clear all also dismisses their clearable Android notifications.",style=MaterialTheme.typography.bodySmall)
             TextButton(onClick={val intent=Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);NavigationGuard.allow(this@ApplianceActivity,intent);startActivity(intent)}){Text("Notification access")}
+            var hideSystem by remember {mutableStateOf(engine.notifications.hideSystem)}
+            Row(verticalAlignment=Alignment.CenterVertically) {
+                Text("Hide mirrored Android notifications",Modifier.weight(1f))
+                Switch(hideSystem,{hideSystem=it;engine.notifications.hideSystem=it;if(it)MuseNotifications.live?.mirrorActiveNotifications()},modifier=Modifier.semantics {contentDescription="Hide mirrored Android notifications"})
+            }
+            Text("Keeps the companion bubble and removes clearable alerts from Android's tray. Calls, alarms and ongoing alerts stay. Android may show or sound the original alert briefly before it is mirrored.",style=MaterialTheme.typography.bodySmall)
             val savedVideo by engine.video.collectAsState()
             if(savedVideo?.isFile==true)TextButton(onClick=engine::restoreVideo){Text("Show last saved video on Home")}
             val portraitStatus by engine.portraitStatus.collectAsState()

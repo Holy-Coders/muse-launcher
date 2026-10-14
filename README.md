@@ -4,7 +4,7 @@ An open source Android companion for your own Muse. Put a spare phone on your
 desk or in your pocket: tap or hold your avatar to talk, share photos or short videos, and let a
 small animated companion present replies and notifications.
 
-**Community preview, 0.7.0.** Android 11+ on a 64-bit arm64 or x86_64 device.
+**Community preview, 0.7.1.** Android 11+ on a 64-bit arm64 or x86_64 device.
 Jelly Star on Android 13 has device evidence; other phones need testing. No root
 is required for screen controls, pairing, camera or optional Home-screen use.
 
@@ -23,7 +23,8 @@ is required for screen controls, pairing, camera or optional Home-screen use.
 - One persistent Muse conversation, reply bubbles you can swipe away, and
   optional Android read-aloud.
 - Optional notification access: local source-labeled bubbles, an unread count,
-  swipe dismissal and Clear all.
+  swipe dismissal and Clear all. An optional setting hides clearable Android
+  tray alerts after mirroring; calls, alarms and ongoing alerts stay visible.
 - Optional hardware-button calibration on phones that expose an extra key.
   The firmware-bound physical test gate is preserved.
 
@@ -47,7 +48,9 @@ Use **guided setup** on first launch. Each person supplies their own personal
 SDK token and pairs from Muse on a **second phone**. No shared developer token,
 backend account or credentials ship in the app. A correlated reply test verifies
 connection before setup marks it successful. Same-phone Bluetooth pairing has
-not been established.
+not been established. The second phone is needed for initial pairing only;
+afterward this phone connects directly over the internet. Installing Muse on
+the same phone does not currently replace that initial setup step.
 
 Muse's source SDK is Apache-2.0, but service tokens have separate
 [personal-use terms](https://gadgets.muse.ai/sdk-terms). Token-bearing public

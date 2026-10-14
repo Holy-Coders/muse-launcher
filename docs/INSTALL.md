@@ -13,7 +13,9 @@
 5. On a second phone, sign into your Muse account. In Muse → Settings → Devices,
    enable Developer mode, add a device, and select the `MuseGadget…` name shown
    in Muse Launcher. Select **Current phone connection**; Muse Launcher already has internet, so
-   it does not need a Wi-Fi password. Same-phone discovery is not supported yet.
+   it does not need a Wi-Fi password. A supported same-phone pairing route has not been established.
+   The second phone is only needed for initial authorization; afterward the
+   launcher connects over the internet without it.
 6. In Muse Launcher tap Connect Muse, then Test my connection. **Muse replied — connected**
    verifies a correlated response in your saved Muse Launcher conversation.
 7. Grant microphone/camera permissions if you want those features. Setting Muse Launcher
@@ -58,5 +60,31 @@ Settings → Get my Muse status update requests a check-in. Settings → Develop
 mode reveals optional hardware, Android settings and server/appliance controls.
 This does not switch on Developer mode in Muse or in Android itself.
 
-Home's **Info** button opens gesture instructions. With notifications present,
+Home's **Info** button opens gesture instructions. With notifications or Muse replies present,
 your avatar sits bottom-left and looks toward the source-labeled bubbles above.
+
+
+## Mirrored notifications
+
+Settings → **Hide mirrored Android notifications** keeps ordinary notification
+bubbles in Muse Launcher while dismissing their clearable Android tray alerts.
+It is off by default and requires notification access. Calls, alarms,
+full-screen alerts and ongoing/foreground-service notifications keep their
+Android presentation. The listener acts after posting, so a source sound or
+heads-up banner may appear briefly. Turning this off affects future alerts; it
+cannot restore already dismissed Android notifications. Mirrored bubbles remain
+until swiped, cleared, or removed with local app data.
+
+## Same-phone and desktop pairing investigation
+
+The current official SDK provisions account-specific device credentials through
+Muse's mobile app over Bluetooth. A personal SDK token alone is insufficient.
+No supported same-phone app handoff or browser/device-code flow was found in the
+current SDK. We have not demonstrated a phone discovering its own gadget advertisement.
+
+Community Mac adapters can advertise a Mac gadget to Muse on your existing
+phone; see [muse-client](https://github.com/wong2/muse-client). That avoids a second
+phone for a **Mac gadget**, but does not itself pair this Android launcher.
+A secure Mac-to-launcher provisioning bridge would be additional work, and is
+not shipped here. Do not copy another app's private credentials. This limitation
+applies to initial setup, not daily launcher use.

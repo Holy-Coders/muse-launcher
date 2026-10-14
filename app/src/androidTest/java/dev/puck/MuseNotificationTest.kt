@@ -76,7 +76,7 @@ class MuseNotificationTest {
                 assertNotNull("Notification preview not rendered",find(ui.rootInActiveWindow))
                 fun avatar(n:android.view.accessibility.AccessibilityNodeInfo?):android.view.accessibility.AccessibilityNodeInfo? {
                     if(n==null)return null
-                    if(n.stateDescription?.toString()=="Looking up at notifications")return n
+                    if(n.stateDescription?.toString()=="Looking up at messages")return n
                     for(i in 0 until n.childCount)avatar(n.getChild(i))?.let {return it}
                     return null
                 }

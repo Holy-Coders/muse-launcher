@@ -6,7 +6,7 @@ never assigns a hardware key, requests root or changes volume/power behavior.
 
 ## Extra-key setup
 
-1. Open Muse Launcher, then long-press the companion for Setup.
+1. Open Muse Launcher, then tap Settings for Setup, then enable Developer mode.
 2. If the phone has OEM shortcut/PTT settings, configure the extra button so
    Muse Launcher can receive actual press/release events while in the foreground. Merely
    launching Muse Launcher from a shortcut may not deliver those events. OEM settings

@@ -25,8 +25,14 @@ class PublicFirstRunTest {
         assertFalse("First run replaced Home without consent",role.isRoleHeld(android.app.role.RoleManager.ROLE_HOME))
         compose.onNodeWithText("Try Muse Launcher before connecting").performScrollTo().performClick()
         compose.waitForIdle()
-        compose.onNodeWithText("Enable microphone to talk").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Avatar: tap to record, tap again to send; hold and release to send; double tap for camera").assertIsDisplayed()
         assertTrue(c.getSharedPreferences("appliance",0).getBoolean("onboarding_done",false))
         assertNull("Onboarding armed a hardware key",dev.puck.appliance.ApplianceStore(c).key)
+        compose.onNodeWithText("Settings").performClick()
+        compose.onNodeWithText("Observe physical button").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Launcher developer mode").performScrollTo().performClick()
+        compose.onNodeWithText("Observe physical button").assertExists()
+        compose.onNodeWithContentDescription("Launcher developer mode").performScrollTo().performClick()
+        compose.onNodeWithText("Observe physical button").assertDoesNotExist()
     }
 }

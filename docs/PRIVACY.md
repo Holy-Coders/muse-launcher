@@ -4,7 +4,10 @@ Muse Launcher is a community Android app. It has no developer analytics, trackin
 mandatory developer-hosted service. Normal Muse mode connects to your own Muse
 account; Muse's own privacy and service terms apply there.
 
-- A deliberate hold records voice; release submits it. Original audio and any
+- A single avatar tap starts voice recording; a second tap submits it. Holding
+  the avatar records until release, which submits it. A double tap opens the
+  camera without starting voice capture. Leaving the app cancels voice capture.
+  Recordings time out after 60 seconds without submitting. Original audio and any
   attached photo/video go to Muse. Captions run locally and do not execute commands.
 - Photos and videos are captured only after your input and saved in private app
   storage. Photos/voice files are removed after confirmed successful turns. Saved
@@ -12,7 +15,9 @@ account; Muse's own privacy and service terms apply there.
   pending attachment, rather than deleting the saved MP4.
 - Replies, turn-state journals, caption models and optional personal avatars
   remain in private app storage. Personal avatar linking requests your own Muse
-  identity; it may download the returned avatar through HTTPS.
+  identity; it may download the returned avatar through HTTPS. Custom animation
+  frames are generated on this phone and are never sent to a developer service.
+  A generic profile uses the built-in animation.
 - Notification access is optional. Ordinary notification previews are stored in
   a bounded private inbox. They are not sent to Muse or interpreted as commands.
   Swipe/Clear all also dismiss clearable source notifications on the phone.

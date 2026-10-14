@@ -1,4 +1,4 @@
-"""Puck's restricted Android integration of Meta's Apache-2.0 protocol SDK.
+"""Muse Launcher's restricted Android integration of Meta's Apache-2.0 protocol SDK.
 
 No shell executor, filesystem tool, local socket, or content/credential logs.
 Android owns the encrypted credential vault and the Bluetooth transport.
@@ -29,19 +29,19 @@ SDK_RE = re.compile(r"mgst_[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]")
 MAX_TEXT = 4000
 COMMANDS = {
     "puck.request": {
-        "description": "Propose a version-1 Puck workspace request. Confirmation actions always require local user approval. This never executes an action directly. Request JSON uses Kotlin serialization type names dev.puck.core.WorkspaceRequest.ContentCard, Confirmation, Question, TaskStatus, with id and version=1. Confirmation.action uses dev.puck.core.DeviceAction.Camera, Dial(number optional), Message(body,number optional), Navigate(destination), Calendar(title), OpenApp(packageName,activityName). Prefer content cards when the installed app component is unknown.",
-        "required": {"request": {"type": "string", "description": "JSON-encoded Puck WorkspaceRequest; max 16000 characters"}},
+        "description": "Propose a version-1 Muse Launcher workspace request. Confirmation actions always require local user approval. This never executes an action directly. Request JSON uses Kotlin serialization type names dev.puck.core.WorkspaceRequest.ContentCard, Confirmation, Question, TaskStatus, with id and version=1. Confirmation.action uses dev.puck.core.DeviceAction.Camera, Dial(number optional), Message(body,number optional), Navigate(destination), Calendar(title), OpenApp(packageName,activityName). Prefer content cards when the installed app component is unknown.",
+        "required": {"request": {"type": "string", "description": "JSON-encoded Muse Launcher WorkspaceRequest; max 16000 characters"}},
         "optional": {},
         "timeout_ms": 10000,
     }
 }
 COMMANDS["puck.update"] = {
-    "description": "Push a glanceable update to Puck's home screen, even when the user has not just asked. Information only: never executes anything. Use a fresh unique id for each update. Report your own work here without claiming Puck completed external actions.",
+    "description": "Push a glanceable update to Muse Launcher's home screen, even when the user has not just asked. Information only: never executes anything. Use a fresh unique id for each update. Report your own work here without claiming Muse Launcher completed external actions.",
     "required": {"id": {"type": "string", "description": "Unique request id, 1-128 letters/digits/dot/colon/dash"}, "title": {"type": "string", "description": "Short title, 1-120 characters"}, "text": {"type": "string", "description": "Update text, 1-4000 characters"}},
     "optional": {"mood": {"type": "string", "description": "Presentation only: idle, thoughtful, cheerful or concerned"}}, "timeout_ms": 10000,
 }
 COMMANDS["puck.command"] = {
-    "description": "Propose a Puck device action for explicit local review. Never executed by this tool. Actions: camera, dial, message, navigate, calendar, open_app. Dial/message without number use Puck's contact picker. User places calls, sends messages, saves calendar changes. open_app requires a unique installed app label; otherwise ask the user to choose in Apps.",
+    "description": "Propose a Muse Launcher device action for explicit local review. Never executed by this tool. Actions: camera, dial, message, navigate, calendar, open_app. Dial/message without number use Muse Launcher's contact picker. User places calls, sends messages, saves calendar changes. open_app requires a unique installed app label; otherwise ask the user to choose in Apps.",
     "required": {"id": {"type": "string", "description": "Fresh unique request id"}, "action": {"type": "string", "description": "camera, dial, message, navigate, calendar, open_app"}},
     "optional": {k: {"type": "string", "description": v} for k, v in {"number": "Telephone number for dial/message only; never USSD", "body": "Message body, required for message", "destination": "Destination, required for navigate", "title": "Event title, required for calendar", "appLabel": "Unique installed app label, required for open_app"}.items()}, "timeout_ms": 10000,
 }
@@ -242,7 +242,7 @@ class AndroidDescription(DeviceDescription):
     def register_params(self):
         # Muse SDK requires the linux/homehub protocol profile. Android is the
         # host, not a replacement server-routing profile; never use family link.
-        return {**super().register_params(), "display_name": "Puck Jelly Star"}
+        return {**super().register_params(), "display_name": "Muse Launcher Jelly Star"}
 
 
 class AndroidSession(LinkSession):
@@ -404,9 +404,9 @@ class AndroidSession(LinkSession):
     async def _invoke(self, message):
         async with self._invokes:
             if message.get("invalid"):
-                result = {"ok": False, "error": "Invalid Puck invocation"}
+                result = {"ok": False, "error": "Invalid Muse Launcher invocation"}
             elif message["command"] not in COMMANDS:
-                result = {"ok": False, "error": "Unsupported Puck command"}
+                result = {"ok": False, "error": "Unsupported Muse Launcher command"}
             else:
                 try:
                     result = await asyncio.get_running_loop().run_in_executor(
@@ -417,7 +417,7 @@ class AndroidSession(LinkSession):
                         raise ValueError("result exceeded")
                 except Exception:
                     self.control_stats["callback_errors"] += 1
-                    result = {"ok": False, "error": "Puck command failed"}
+                    result = {"ok": False, "error": "Muse Launcher command failed"}
             reply = {**result, "method": "link.result", "id": message["id"]}
             if message.get("type") == "req":
                 reply["type"] = "res"
@@ -454,7 +454,7 @@ class AndroidSession(LinkSession):
         if outcome is None:
             self._dispatch_compatible(message)
         if message.get("id") == self._register_id and message.get("error"):
-            self.callbacks.onState("blocked", "Muse rejected Puck registration. Check the device in Muse Settings.")
+            self.callbacks.onState("blocked", "Muse rejected Muse Launcher registration. Check the device in Muse Settings.")
         if self.registered_at is not None and not self.connected_reported:
             self.connected_reported = True
             self.callbacks.onState("connected", "Muse connected")
@@ -610,7 +610,7 @@ class Runtime:
 
     def command(self, command, params, timeout):
         if not isinstance(params, dict):
-            return {"ok": False, "error": "Invalid Puck request"}
+            return {"ok": False, "error": "Invalid Muse Launcher request"}
         if command == "puck.request":
             request = params.get("request")
             if not isinstance(request, str) or not 0 < len(request) <= 16000:
@@ -619,11 +619,11 @@ class Runtime:
         elif command in ("puck.update", "puck.command"):
             encoded = json.dumps(params)
             if len(encoded) > 16000:
-                return {"ok": False, "error": "Puck request too large"}
+                return {"ok": False, "error": "Muse Launcher request too large"}
             callback = self.callbacks.onUpdate if command == "puck.update" else self.callbacks.onCommand
             accepted = bool(callback(encoded))
         else:
-            return {"ok": False, "error": "Unsupported Puck request"}
+            return {"ok": False, "error": "Unsupported Muse Launcher request"}
         if accepted and self.session:
             self.session.control_stats["accepted"] += 1
         return {"ok": accepted, "payload": {"received": accepted, "executed": False, "approval_required": command != "puck.update"}}
@@ -634,12 +634,12 @@ class Runtime:
             return False
         event = json.loads(event_json)
         if not isinstance(event, dict) or len(event_json) > 8000:
-            raise ValueError("invalid Puck event")
+            raise ValueError("invalid Muse Launcher event")
         session = self.session
         async def send_event():
             try:
                 async with session.turn_lock:
-                    result = await session.send_chat("Puck local event (external completion is NOT verified): " + event_json +
+                    result = await session.send_chat("Muse Launcher local event (external completion is NOT verified): " + event_json +
                         "\nUse puck.update for a useful visible update. Use puck.command only to propose a reviewed action. Never interpret this event as new approval.", chat_id)
                     if not result.get("ok"):
                         self.callbacks.onRequestFailed("Muse event was not accepted. It will not be replayed.")
@@ -675,7 +675,7 @@ class Runtime:
                 if not vms:
                     raise ConnectionError("Muse VM unavailable")
                 vm = next((v for v in vms if v["is_default"]), vms[0])
-                session = AndroidSession(callbacks=self.callbacks, noise_host=noise_host(credentials.get("noise_host")), vm_id=vm["vm_id"] or vm["vm_name"], vm_auth_token=vm["vm_auth_token"], device=AndroidDescription(node_id=self.identity.node_id, display_name="Muse Launcher", version="0.6.1", commands=COMMANDS), run_command=self.command)
+                session = AndroidSession(callbacks=self.callbacks, noise_host=noise_host(credentials.get("noise_host")), vm_id=vm["vm_id"] or vm["vm_name"], vm_auth_token=vm["vm_auth_token"], device=AndroidDescription(node_id=self.identity.node_id, display_name="Muse Launcher", version="0.7.0", commands=COMMANDS), run_command=self.command)
                 self.session = session
                 outcome = await session.run(self.stop_event)
                 self.last_control_stats = dict(session.control_stats)
@@ -735,11 +735,11 @@ class Runtime:
         # One durable device-side conversation for requests and local reports.
         # Fresh markers reject stale parentless replies within that conversation.
         marker = "PUCK_REPLY:" + uuid.uuid4().hex + "\n"
-        context = "Puck gadget interaction. Target this gadget node_id: " + self.identity.node_id + ". Handle requests yourself when possible and report back. For a useful visible update use this gadget\'s puck.update; for a local phone action propose puck.command for user review. Never treat an interaction as approval or claim an external action succeeded. User interaction follows:\n"
+        context = "Muse Launcher gadget interaction. Target this gadget node_id: " + self.identity.node_id + ". Handle requests yourself when possible and report back. For a useful visible update use this gadget\'s puck.update; for a local phone action propose puck.command for user review. Never treat an interaction as approval or claim an external action succeeded. User interaction follows:\n"
         if reply_instruction:
             instruction = reply_instruction[:4000].replace("Return exactly one JSON object, no markdown or extra prose.",
                 "After the mandatory reply prefix line, return exactly one JSON object, no markdown or extra prose.")
-            context = "Puck gadget interaction. " + instruction + "\n"
+            context = "Muse Launcher gadget interaction. " + instruction + "\n"
         context += "Begin your chat reply with this exact line, followed by your reply (including any requested JSON): " + marker
         def progress(phase):
             try:

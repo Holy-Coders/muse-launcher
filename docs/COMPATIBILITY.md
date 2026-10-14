@@ -3,7 +3,7 @@
 | Capability | Requirement / evidence |
 |---|---|
 | Install | Android 11 / API 30+, arm64-v8a or x86_64. 32-bit-only phones unsupported. |
-| Screen Talk | Microphone permission; no special hardware mapping or root. |
+| Avatar gestures | Microphone permission; no special hardware mapping or root. |
 | Photos/video | Camera hardware and permission; CameraX capability varies. SD MP4, 8 MB cap. |
 | Muse pairing | Personal token, internet, BLE advertising and a second signed-in Muse phone. |
 | Home | Optional standard Android Home selection; ordinary app use also supported. |
@@ -21,7 +21,7 @@ configurations. Clean onboarding and touch-control checks are distinct from live
 pairing and must be reported separately. The repository includes opt-in live and
 physical-device tests; CI must not run them using shared account credentials.
 
-The Android package remains `dev.puck.launcher` so existing personal Puck installs
+The Android package remains `dev.puck.launcher` so existing personal earlier installs
 can update without losing pairing or media when the signing key matches. Public
 release uses one Home entry, named Muse Launcher; legacy launcher code is retained
 for development/maintenance. Debug and release signing keys differ.

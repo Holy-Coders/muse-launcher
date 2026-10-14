@@ -28,7 +28,7 @@ class LiveApplianceConnectionTest {
         val oldUpdate=engine.update.value;val oldStatus=engine.status.value
         val id=UUID.randomUUID().toString()
         val clip=java.io.File(engine.store.dir,"fixture-$id.mp4")
-        val bytes=inst.uiAutomation.executeShellCommand("cat /sdcard/Download/puck-generated-video.mp4").let {fd->android.os.ParcelFileDescriptor.AutoCloseInputStream(fd).use {it.readBytes()}}
+        val bytes=inst.uiAutomation.executeShellCommand("cat /sdcard/Download/muse-launcher-generated-video.mp4").let {fd->android.os.ParcelFileDescriptor.AutoCloseInputStream(fd).use {it.readBytes()}}
         clip.writeBytes(bytes)
         val journal=engine.store.writeTurn(id,null,null,clip)
         try {
@@ -36,8 +36,9 @@ class LiveApplianceConnectionTest {
             withTimeout(120_000){while(runCatching {org.json.JSONObject(journal.readText()).optString("state")}.getOrDefault("")!="sent")delay(200)}
             val reply=engine.update.value.lowercase()
             assertTrue("Muse did not see both phases of the generated video",reply.contains("red") && reply.contains("green"))
+            assertTrue("Muse ignored the video audio request",reply.contains("video audio works"))
             assertTrue("Sending deleted saved clip",clip.exists())
-            c.filesDir.resolve("appliance-video-result.json").writeText(org.json.JSONObject().put("sent",true).put("both_colors_understood",true).put("saved_clip_retained",true).put("fixture_bytes",bytes.size).toString())
+            c.filesDir.resolve("appliance-video-result.json").writeText(org.json.JSONObject().put("sent",true).put("both_colors_understood",true).put("saved_clip_retained",true).put("embedded_audio_followed",true).put("fixture_bytes",bytes.size).toString())
         } finally {
             clip.delete();journal.delete()
             withContext(Dispatchers.Main){engine.update.value=oldUpdate;engine.store.prefs.edit().putString("update",oldUpdate).apply();engine.status.value=oldStatus}

@@ -14,7 +14,7 @@ object AppliancePolicy {
     fun companionEntry(c:Context,enabled:Boolean) {
         c.getSharedPreferences("appliance",Context.MODE_PRIVATE).edit().putBoolean("companion_entry",enabled).commit()
         c.packageManager.setComponentEnabledSetting(ComponentName(c.packageName,"dev.puck.VoiceEntry"),
-            if(enabled)android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED else android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DEFAULT,
+            if(enabled)android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED else android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
             android.content.pm.PackageManager.DONT_KILL_APP)
     }
     fun configure(c: Context) {

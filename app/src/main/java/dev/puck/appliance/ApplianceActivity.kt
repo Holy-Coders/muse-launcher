@@ -13,6 +13,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -141,7 +142,7 @@ class ApplianceActivity:ComponentActivity() {
                             CompanionWelcome(dev.puck.MuseRuntime.get(this@ApplianceActivity),::openSetupLink,::beginPairing,
                                 {permissions.launch(arrayOf(Manifest.permission.RECORD_AUDIO,Manifest.permission.CAMERA,Manifest.permission.POST_NOTIFICATIONS))},
                                 {val intent=Intent(android.provider.Settings.ACTION_HOME_SETTINGS);NavigationGuard.allow(this@ApplianceActivity,intent);startActivity(intent)},
-                                {engine.store.prefs.edit().putBoolean("onboarding_done",true).apply();welcome=false})
+                                {engine.store.prefs.edit().putBoolean("onboarding_done",true).apply();welcome=false;if(dev.puck.MuseRuntime.get(this@ApplianceActivity).connection.value==dev.puck.core.ConnectionStatus.MuseConnected)engine.syncPortrait()})
                         } else if(playingVideo && video!=null) {
                             VideoPane(video!!){playingVideo=false}
                         } else if(camera) {
@@ -151,13 +152,19 @@ class ApplianceActivity:ComponentActivity() {
                         } else {
                             val busy=status in ApplianceEngine.BUSY_STATES
                             val interacting=status=="Listening" || busy
-                            val idle=!interacting && notification==null && update.isBlank() && pendingCall==null && pendingPhone==null && photo==null && speechMessage.isBlank() && engine.store.key!=null
+                            val idle=!interacting && notification==null && update.isBlank() && pendingCall==null && pendingPhone==null && photo==null && speechMessage.isBlank()
                             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-                            val petSize=if(idle)minOf(280.dp,maxWidth,(maxHeight-96.dp).coerceAtLeast(72.dp)) else if(interacting)72.dp else if(notification!=null)if(notifications.size>1)72.dp else 96.dp else if(update.isNotBlank())120.dp else 180.dp
-                            Column(Modifier.fillMaxSize().then(if(idle)Modifier else Modifier.verticalScroll(pageScroll,overscrollEffect=null)),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(12.dp,if(idle)Alignment.CenterVertically else Alignment.Top)) {
-                            Text(portrait.name,style=MaterialTheme.typography.titleMedium)
-                            Pet(if(speaking)"Speaking" else if(unread>0 && !interacting)"New update" else status,portrait,if(unread>0)"cheerful" else mood,Modifier.size(petSize).semantics {contentDescription="Get ${portrait.name} update"}.combinedClickable(onClick={CompanionHaptics.pulse(this@ApplianceActivity,"pet");if(notification!=null){engine.presentNotification();engine.notifications.read(notification.id)}else engine.checkIn(true,true)},onLongClick={setup=true}))
-                            CompanionStatus(if(speaking)"Speaking" else if(unread>0 && status in setOf("Resting","Muse update","Update ready"))"New notifications" else status)
+                            val docked=notification!=null && !interacting
+                            val petSize=if(docked)96.dp else if(idle)minOf(280.dp,maxWidth,(maxHeight-140.dp).coerceAtLeast(72.dp)) else if(interacting)72.dp else if(update.isNotBlank())120.dp else 180.dp
+                            Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
+                                Text(portrait.name,Modifier.weight(1f),style=MaterialTheme.typography.titleMedium)
+                                TextButton(onClick={engine.cancelAvatarVoice();speech.stop();setup=true}){Text("Settings")}
+                            }
+                            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                            val spaceTop=if(docked)0.dp else if(idle)(maxHeight/2+petSize/2+8.dp).coerceAtMost((maxHeight-36.dp).coerceAtLeast(0.dp)) else petSize+12.dp
+                            Column(Modifier.fillMaxSize().padding(bottom=if(docked)112.dp else 0.dp).then(if(idle)Modifier else Modifier.verticalScroll(pageScroll,overscrollEffect=null)).padding(top=spaceTop),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                            if(!docked)CompanionStatus(if(speaking)"Speaking" else status)
                             if(interacting) Card(Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(12.dp)) {
                                     Text(captionState,style=MaterialTheme.typography.labelSmall)
@@ -217,14 +224,17 @@ class ApplianceActivity:ComponentActivity() {
                                 }
                             }
                             if(photo!=null) {Text("Photo attached to your next question");TextButton(onClick={photo?.delete();engine.photo.value=null}) {Text("Remove photo")}}
-                            if(engine.store.key==null) TextButton(onClick={setup=true}) {Text("Set up button")}
+                            }
+                            AvatarControl(Modifier.align(if(docked)Alignment.BottomStart else if(idle)Alignment.Center else Alignment.TopCenter).size(petSize)
+                                .semantics {stateDescription=if(docked)"Looking up at notifications" else "Ready for input"},
+                                toggle={if(engine.avatarRecording)engine.endAvatarVoice() else startAvatarVoice()},start=::startAvatarVoice,end=engine::endAvatarVoice,
+                                camera={engine.cancelAvatarVoice();engine.cameraGesture.value++},cancel=engine::cancelAvatarVoice) {
+                                Pet(if(speaking)"Speaking" else if(unread>0 && !interacting)"New update" else status,portrait,if(unread>0)"cheerful" else mood,Modifier.fillMaxSize(),lookUp=docked)
                             }
                             }
-                            Text(if(engine.store.key!=null)"Double tap your button for camera · Hold to talk" else "Hold Talk, speak, then release to send",style=MaterialTheme.typography.bodySmall)
-                            if(engine.store.key==null) {
-                                if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)Button(onClick={permissions.launch(arrayOf(Manifest.permission.RECORD_AUDIO))},modifier=Modifier.fillMaxWidth()){Text("Enable microphone to talk")}
-                                else HoldControl("Hold to talk",press={engine.edge(true)},release={engine.edge(false)},cancel={engine.interrupt();engine.edge(false)})
                             }
+                            }
+                            Text("Tap avatar to record · Tap again to send\nHold and release to send · Double tap for camera",style=MaterialTheme.typography.bodySmall)
                             if(!interacting)OutlinedButton(onClick={
                                 if(checkSelfPermission(Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED)camera=true
                                 else permissions.launch(arrayOf(Manifest.permission.CAMERA))
@@ -235,6 +245,9 @@ class ApplianceActivity:ComponentActivity() {
             }
         }
         runCatching { startForegroundService(Intent(this,ApplianceService::class.java)) }
+    }
+    private fun startAvatarVoice(){
+        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)permissions.launch(arrayOf(Manifest.permission.RECORD_AUDIO)) else engine.startAvatarVoice()
     }
     private fun openSetupLink(url:String){
         val intent=Intent(Intent.ACTION_VIEW,android.net.Uri.parse(url))
@@ -322,6 +335,7 @@ class ApplianceActivity:ComponentActivity() {
             Button(onClick={authorized=engine.store.authenticates(pin);pin=""}) {Text("Unlock setup")}
         } else {
             Button(onClick={engine.interrupt();setup=false;welcome=true}){Text("Connect Muse / guided setup")}
+            Button(onClick={permissions.launch(arrayOf(Manifest.permission.RECORD_AUDIO,Manifest.permission.CAMERA,Manifest.permission.POST_NOTIFICATIONS))}){Text("Microphone and camera permissions")}
             OutlinedButton(onClick={forgetMuse=true}){Text("Forget Muse connection")}
             if(forgetMuse)AlertDialog(onDismissRequest={forgetMuse=false},title={Text("Forget Muse on this phone?")},text={Text("Removes saved SDK and pairing credentials. Your local messages and media remain. Also remove Muse Launcher in Muse Devices to revoke remote access.")},confirmButton={TextButton(onClick={engine.interrupt();dev.puck.MuseRuntime.get(this@ApplianceActivity).forget();forgetMuse=false;message="Muse connection removed"}){Text("Forget connection")}},dismissButton={TextButton(onClick={forgetMuse=false}){Text("Keep connection")}})
             Text(if(MuseNotifications.allowed(this@ApplianceActivity))"Notification access enabled" else "Notification access is off")
@@ -351,6 +365,12 @@ class ApplianceActivity:ComponentActivity() {
             Text("These are installed Android voices. Muse has not exposed its own voice through this SDK.",style=MaterialTheme.typography.bodySmall)
             var haptics by remember {mutableStateOf(engine.store.prefs.getBoolean("haptics",true))}
             Row(verticalAlignment=Alignment.CenterVertically) {Switch(haptics,{haptics=it;engine.store.prefs.edit().putBoolean("haptics",it).apply()});Text("Button and response vibrations")}
+            Button(onClick={engine.checkIn(true,true)}){Text("Get my Muse status update")}
+            var developer by remember {mutableStateOf(engine.store.prefs.getBoolean("developer_mode",false))}
+            Row(verticalAlignment=Alignment.CenterVertically){Text("Developer mode",Modifier.weight(1f));Switch(developer,{developer=it;engine.store.prefs.edit().putBoolean("developer_mode",it).apply();if(!it){engine.calibrating=false;engine.interrupt()}},modifier=Modifier.semantics {contentDescription="Launcher developer mode"})}
+            Text("Show hardware diagnostics and advanced server/appliance controls. This does not enable Developer mode in the Muse app.",style=MaterialTheme.typography.bodySmall)
+            if(developer) {
+            Button(onClick={val intent=Intent(android.provider.Settings.ACTION_SETTINGS);NavigationGuard.allow(this@ApplianceActivity,intent);startActivity(intent)}){Text("Open Android settings")}
             Text(if(NavigationGuard.connected)"Companion navigation guard connected" else "Companion navigation guard is not connected")
             Button(onClick={
                 NavigationGuard.setEnabled(this@ApplianceActivity,true)
@@ -411,11 +431,12 @@ class ApplianceActivity:ComponentActivity() {
                     message=runCatching {stopLockTask();"Session pinning ended"}.getOrDefault("Could not stop pinning")
                 }) {Text("Exit pinning for maintenance")}
             }
+            }
             var museVoice by remember {mutableStateOf(engine.store.prefs.getBoolean("muse_voice",true))}
             Row(verticalAlignment=Alignment.CenterVertically) {Switch(museVoice,{museVoice=it;engine.store.prefs.edit().putBoolean("muse_voice",it).apply()});Text("Use paired Muse for voice")}
             var checkins by remember {mutableStateOf(engine.store.prefs.getBoolean("checkins",true))}
             Row(verticalAlignment=Alignment.CenterVertically) {Switch(checkins,{checkins=it;engine.store.prefs.edit().putBoolean("checkins",it).apply()});Text("Check for updates while Muse Launcher is visible")}
-            Text("Tap the pet for an update; automatic checks are at most once every 30 minutes.",style=MaterialTheme.typography.bodySmall)
+            Text("Use Get my Muse status update here; automatic checks are at most once every 30 minutes.",style=MaterialTheme.typography.bodySmall)
             Text("Paired Muse receives voice and attached photos directly. The HTTPS server is optional. Muse native updates remain service-dependent.",style=MaterialTheme.typography.bodySmall)
             Button(onClick=engine::retry) {Text("Retry queued turn")}
             Text("Retries reuse the turn ID. A failed provider or uncertain Muse outcome needs a fresh recording; it will not be sent twice.",style=MaterialTheme.typography.bodySmall)
@@ -428,7 +449,7 @@ class ApplianceActivity:ComponentActivity() {
         if(!engine.calibrating){setup=false;playingVideo=false}
     }
     override fun onResume(){super.onResume();NavigationGuard.clear(this);if(::engine.isInitialized)engine.visible=true}
-    override fun onPause(){videoPlayer?.pause();if(::speech.isInitialized)speech.stop();if(::engine.isInitialized){engine.visible=false;if(engine.cameraActive || !engine.rootConnected.value)engine.interrupt()};super.onPause()}
+    override fun onPause(){videoPlayer?.pause();if(::speech.isInitialized)speech.stop();if(::engine.isInitialized){engine.visible=false;if(engine.avatarRecording || engine.cameraActive || !engine.rootConnected.value)engine.interrupt()};super.onPause()}
     override fun onDestroy(){if(::engine.isInitialized && engine.onButtonPress===stopVoiceForButton)engine.onButtonPress=null;if(::speech.isInitialized)speech.close();super.onDestroy()}
     override fun onWindowFocusChanged(focus:Boolean){super.onWindowFocusChanged(focus);if(!focus && ::engine.isInitialized)engine.interrupt()}
     @Composable private fun MessageBubble(source:String,title:String,text:String,maxText:androidx.compose.ui.unit.Dp,read:()->Unit,dismiss:()->Unit,speaking:Boolean) {
@@ -587,7 +608,7 @@ class ApplianceActivity:ComponentActivity() {
         Text(label,style=MaterialTheme.typography.titleMedium)
     }
 }
-@Composable private fun Pet(status:String,portrait:MusePortrait.Profile,mood:String,modifier:Modifier) {
+@Composable private fun Pet(status:String,portrait:MusePortrait.Profile,mood:String,modifier:Modifier,lookUp:Boolean=false) {
     val context=androidx.compose.ui.platform.LocalContext.current
     val owner=androidx.lifecycle.compose.LocalLifecycleOwner.current
     val lifecycle by owner.lifecycle.currentStateFlow.collectAsState()
@@ -597,13 +618,13 @@ class ApplianceActivity:ComponentActivity() {
     val bob by androidx.compose.animation.core.animateFloatAsState(if(animate && raised)3f else 0f,label="Pet breath")
     val atlas=remember(portrait.animation,portrait.updated){portrait.animation?.let {android.graphics.BitmapFactory.decodeFile(it.path)?.asImageBitmap()}}
     var frame by remember {mutableStateOf(0)}
-    val row=when {status=="Speaking"->3;status=="Listening"->1;status in ApplianceEngine.BUSY_STATES || status in setOf("Checking for updates","New update")->2;else->0}
+    val row=when {lookUp && portrait.animationRows>=5->4;status=="Speaking"->3;status=="Listening"->1;status in ApplianceEngine.BUSY_STATES || status in setOf("Checking for updates","New update")->2;else->0}
     LaunchedEffect(animate,row,atlas){frame=0;while(animate && atlas!=null){kotlinx.coroutines.delay(if(row==0)500 else 220);frame=(frame+1)%6}}
     if(atlas!=null) {
         val column=if(frame<4)frame else 6-frame
-        Canvas(modifier){
-            val left=atlas.width*column/4;val top=atlas.height*row/4
-            val right=atlas.width*(column+1)/4;val bottom=atlas.height*(row+1)/4
+        Canvas(modifier.graphicsLayer {rotationX=if(lookUp)12f else 0f;rotationZ=if(lookUp && portrait.animationRows==4)-7f else 0f}){
+            val left=atlas.width*column/4;val top=atlas.height*row/portrait.animationRows
+            val right=atlas.width*(column+1)/4;val bottom=atlas.height*(row+1)/portrait.animationRows
             val edge=size.minDimension.toInt()
             drawImage(atlas,srcOffset=androidx.compose.ui.unit.IntOffset(left,top),srcSize=androidx.compose.ui.unit.IntSize(right-left,bottom-top),dstOffset=androidx.compose.ui.unit.IntOffset((size.width.toInt()-edge)/2,(size.height.toInt()-edge)/2),dstSize=androidx.compose.ui.unit.IntSize(edge,edge),filterQuality=androidx.compose.ui.graphics.FilterQuality.High)
         }
@@ -614,7 +635,7 @@ class ApplianceActivity:ComponentActivity() {
         val tilt by androidx.compose.animation.core.animateFloatAsState(if(animate && status in ApplianceEngine.BUSY_STATES)if(raised)3f else -3f else 0f,label="Muse thought")
         Box(modifier,contentAlignment=Alignment.Center) {
             Canvas(Modifier.fillMaxSize()){drawCircle(if(mood=="concerned")Color(0xffffc28d) else if(status=="Listening")Color(0xffbde2c5) else Color(0xffabcde8),size.minDimension*.46f,alpha=if(raised).12f else .07f)}
-            Image(portraitBitmap,contentDescription=portrait.name+" Muse avatar",modifier=Modifier.fillMaxSize(.90f).graphicsLayer {translationY=bob;rotationZ=tilt;scaleX=if(status=="Speaking" && raised)1.035f else 1f;scaleY=scaleX},contentScale=ContentScale.Fit)
+            Image(portraitBitmap,contentDescription=portrait.name+" Muse avatar",modifier=Modifier.fillMaxSize(.90f).graphicsLayer {translationY=bob;rotationZ=if(lookUp)-7f else tilt;rotationX=if(lookUp)15f else 0f;scaleX=if(status=="Speaking" && raised)1.035f else 1f;scaleY=scaleX},contentScale=ContentScale.Fit)
         }
         return
     }
@@ -622,7 +643,7 @@ class ApplianceActivity:ComponentActivity() {
         val w=size.width;val h=size.height
         drawRoundRect(Color(0xffe8c697),Offset(w*.12f,h*.16f+bob),Size(w*.76f,h*.68f),androidx.compose.ui.geometry.CornerRadius(w*.2f))
         val eye=if(status in setOf("Resting","Reply ready"))h*.025f else h*.055f
-        for(x in listOf(.34f,.66f))drawOval(Color(0xff172b23),Offset(w*x-w*.03f,h*.43f+bob),Size(w*.06f,eye))
+        for(x in listOf(.34f,.66f))drawOval(Color(0xff172b23),Offset(w*x-w*.03f+(if(lookUp)w*.025f else 0f),(if(lookUp)h*.35f else h*.43f)+bob),Size(w*.06f,eye))
         if(status=="Speaking")drawOval(Color(0xff172b23),Offset(w*.44f,h*.56f+bob),Size(w*.12f,if(raised)h*.10f else h*.035f))
         else if(status=="Listening")drawCircle(Color(0xff172b23),w*.04f,Offset(w*.5f,h*.65f+bob))
         else drawArc(Color(0xff172b23),0f,180f,false,Offset(w*.42f,h*.55f+bob),Size(w*.16f,h*.12f),style=androidx.compose.ui.graphics.drawscope.Stroke(w*.02f))

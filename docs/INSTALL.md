@@ -17,10 +17,10 @@
 6. In Muse Launcher tap Connect Muse, then Test my connection. **Muse replied — connected**
    verifies a correlated response in your saved Muse Launcher conversation.
 7. Grant microphone/camera permissions if you want those features. Setting Muse Launcher
-   as your Home screen is optional. Tap Start Muse Launcher, then hold Talk, speak, and
-   release to send. Sliding outside the control cancels the recording.
+   as your Home screen is optional. Tap Start Muse Launcher. Tap your avatar once to record and again to send;
+   or hold it, speak, and release to send. Double tap opens the camera. Sliding outside the control cancels the recording.
 
-Long-press the companion for Setup; **Connect Muse / guided setup** reopens
+Tap **Settings** above the companion for Setup; **Connect Muse / guided setup** reopens
 pairing. The camera has a photo button and hold-to-record video control on phones
 without a verified hardware key. Notification access and read-aloud are optional
 Setup features. Android's ordinary PIN and other apps remain available.
@@ -35,11 +35,25 @@ Setup features. Android's ordinary PIN and other apps remain available.
 - Paired but offline: keep internet available, tap Connect/Reconnect and retest.
   Pairing or an upload acknowledgment alone does not prove reply delivery.
 - Permissions denied: grant them in Android's app settings. Denial never starts
-  recording. A hardware mapping is optional; screen Talk works without one.
-- Hardware button: Setup → Observe physical button. Press/release the extra key
+  recording. A hardware mapping is optional; The avatar works without one.
+- Hardware button: Settings → Developer mode → Observe physical button. Press/release the extra key
   three times and save only the observed mapping. New firmware needs revalidation.
   This does not establish background/locked/suspended button behavior.
 
 To disconnect, use Setup's Disconnect/forget control, then remove Muse Launcher in Muse's
 Devices UI to revoke remote access. Uninstall removes Muse Launcher's local app data.
 Changing the Android Home app is done through Settings → Default apps → Home.
+
+## Avatar and developer controls
+
+A single tap starts hands-free voice recording after the 350ms double-tap
+window; tap again to send. A hold starts after 450ms and sends on release. Double
+tap opens camera without recording voice. Dragging away, touch cancellation or
+leaving the app cancels recording. The 60-second limit cancels without sending.
+The camera still offers its own photo and hold-video controls. Videos can go with
+your next recorded question or with their own audio; no describe-video request
+is inserted.
+
+Settings → Get my Muse status update requests a check-in. Settings → Developer
+mode reveals optional hardware, Android settings and server/appliance controls.
+This does not switch on Developer mode in Muse or in Android itself.

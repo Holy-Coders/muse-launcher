@@ -28,7 +28,7 @@ fun CompanionWelcome(runtime:MuseRuntime,open:(String)->Unit,pair:()->Unit,permi
     var verified by remember {mutableStateOf(false)}
     var result by remember {mutableStateOf("")}
     Text("Meet your Muse",style=MaterialTheme.typography.headlineMedium)
-    Text("Turn a spare Android phone into a companion. Hold the screen button to talk, take photos or videos, and read replies here.")
+    Text("Turn a spare Android phone into a companion. Tap or hold your avatar to talk, take photos or videos, and read replies here.")
     Text("1 · Connect your own account",style=MaterialTheme.typography.titleMedium)
     Text("You need Muse signed in on a second phone for Bluetooth pairing. This phone needs internet and Bluetooth. No root or Wi-Fi password is required.")
     TextButton(onClick={open("https://gadgets.muse.ai/settings/sdk-tokens")}){Text("Get my Muse SDK token")}
@@ -69,7 +69,7 @@ fun CompanionWelcome(runtime:MuseRuntime,open:(String)->Unit,pair:()->Unit,permi
     Button(onClick=permissions){Text("Microphone and camera permissions")}
     OutlinedButton(onClick=home){Text("Choose Muse Launcher as Home (optional)")}
     Text("3 · Start talking",style=MaterialTheme.typography.titleMedium)
-    Text("Hold Talk, speak, then release to send. Phones with an extra hardware button can calibrate it in Setup. Locked-screen hardware activation depends on the device and is not guaranteed.")
+    Text("Tap the avatar to record and tap again to send, or hold it and release to send. Double tap opens camera. Phones with an extra hardware button can calibrate it in Setup. Locked-screen hardware activation depends on the device and is not guaranteed.")
     Button(enabled=verified,onClick=done,modifier=Modifier.fillMaxWidth()){Text("Start Muse Launcher")}
     TextButton(onClick=done){Text("Try Muse Launcher before connecting")}
 }

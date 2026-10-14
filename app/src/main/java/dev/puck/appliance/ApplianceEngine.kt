@@ -37,6 +37,19 @@ class ApplianceEngine private constructor(val context:Context) {
     fun presentNotification(){if(capture==null && !sending)status.value="Muse update"}
     val update=MutableStateFlow(store.prefs.getString("update","")!!)
     val photo=MutableStateFlow<File?>(null)
+    val recordingVoice=MutableStateFlow(false)
+    var avatarRecording=false;private set
+    fun startAvatarVoice(){
+        if(capture!=null)return
+        if(!visible || sending || cameraActive || calibrating)return
+        if(context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)!=android.content.pm.PackageManager.PERMISSION_GRANTED){status.value="Enable microphone in Settings to talk";return}
+        onButtonPress?.invoke();checkInId?.let {dev.puck.MuseRuntime.get(context).cancel(it);checkInId=null}
+        avatarRecording=true;apply(ButtonGesture.Effect.RECORD)
+        if(capture==null)avatarRecording=false
+    }
+    fun endAvatarVoice(){if(avatarRecording && capture!=null){avatarRecording=false;apply(ButtonGesture.Effect.SEND)}}
+    fun toggleAvatarVoice(){if(avatarRecording)endAvatarVoice() else startAvatarVoice()}
+    fun cancelAvatarVoice(){if(avatarRecording){avatarRecording=false;interrupt()}}
     val transcript=MutableStateFlow("")
     val captionState=MutableStateFlow("Preparing live captions")
     val cameraGesture=MutableStateFlow(0L)
@@ -141,6 +154,10 @@ class ApplianceEngine private constructor(val context:Context) {
     private val threshold=Runnable { apply(gesture.tick(SystemClock.elapsedRealtime())) }
     private val deadline=Runnable { interrupt("Recording timed out; nothing sent") }
     init {
+        scope.launch {val profile=portrait.value;if(profile.image!=null && profile.animation==null)runCatching {
+            MuseAnimation.generate(context,profile.name,profile.image)
+            withContext(Dispatchers.Main){portrait.value=MusePortrait.load(context)}
+        }}
         scope.launch {notifications.entries.collect {entries->withContext(Dispatchers.Main){
             if(entries.isEmpty() && status.value=="Muse update")status.value="Resting"
         }}}
@@ -198,7 +215,7 @@ class ApplianceEngine private constructor(val context:Context) {
                     microphoneMode?.invoke(true)
                     val preview=captions
                     capture=PcmCapture(File(store.dir,"$id.wav"),{pcm,n->preview?.accept(pcm,n)}).also {it.start()}
-                    status.value="Listening";handler.postDelayed(deadline,60000)
+                    recordingVoice.value=true;status.value="Listening";handler.postDelayed(deadline,60000)
                     CompanionHaptics.pulse(context,"listening")
                 }
                 catch(_:Exception) {interrupt("Microphone unavailable; release and try again")}
@@ -206,7 +223,7 @@ class ApplianceEngine private constructor(val context:Context) {
             ButtonGesture.Effect.SEND -> {
                 val finishingAt=SystemClock.elapsedRealtime()
                 handler.removeCallbacks(deadline)
-                val audio=capture?.finish();capture=null;runCatching {microphoneMode?.invoke(false)}
+                val audio=capture?.finish();capture=null;recordingVoice.value=false;avatarRecording=false;runCatching {microphoneMode?.invoke(false)}
                 captions?.finish()
                 store.prefs.edit().putLong("capture_finish_ms",SystemClock.elapsedRealtime()-finishingAt).apply()
                 if(audio==null) {id?.let {File(store.dir,"$it.wav").delete()};++captionGeneration;captions?.cancel();status.value="Nothing recorded";CompanionHaptics.pulse(context,"error");return}
@@ -219,7 +236,7 @@ class ApplianceEngine private constructor(val context:Context) {
                 val epoch=foregroundEpoch
                 scope.launch { send(journal,epoch) }
             }
-            ButtonGesture.Effect.CANCEL -> {capture?.cancel();capture=null;runCatching {microphoneMode?.invoke(false)}}
+            ButtonGesture.Effect.CANCEL -> {capture?.cancel();capture=null;recordingVoice.value=false;avatarRecording=false;runCatching {microphoneMode?.invoke(false)}}
             ButtonGesture.Effect.VIDEO_START -> {videoRequest.value=VideoRequest(videoRequest.value.id+1,true)}
             ButtonGesture.Effect.VIDEO_STOP -> {videoRequest.value=videoRequest.value.copy(held=false)}
             ButtonGesture.Effect.VIDEO_CANCEL -> {videoRequest.value=videoRequest.value.copy(held=false,cancelled=true)}
@@ -230,7 +247,7 @@ class ApplianceEngine private constructor(val context:Context) {
     }
     fun interrupt(reason:String="Stopped; nothing sent") {
         if(videoRequest.value.held || videoRecording.value)videoRequest.value=videoRequest.value.copy(held=false,cancelled=true)
-        val active=buttonDown || capture!=null;buttonDown=false
+        val active=buttonDown || capture!=null;buttonDown=false;recordingVoice.value=false;avatarRecording=false
         ++captionGeneration;captions?.cancel();captions=null;transcript.value=""
         handler.removeCallbacks(threshold);handler.removeCallbacks(deadline);apply(gesture.cancel());capture?.cancel();capture=null
         runCatching {microphoneMode?.invoke(false)}
@@ -297,12 +314,12 @@ class ApplianceEngine private constructor(val context:Context) {
                 // A lost Muse outcome cannot be replayed automatically.
                 row.put("state","muse_pending");journal.writeText(row.toString())
                 reply=dev.puck.MuseRuntime.get(context).send(row.getString("id"),
-                    if(data.has("audio"))"Handle the request in the attached speech, using the photo or video if present. Ask for another recording if unclear." else "Describe what happens in the attached video briefly. If you cannot access the video, say so clearly. Do not perform external actions.",
-                    if(data.has("audio"))"appliance" else "checkin",data.optString("image",""),data.optString("audio",""),data.optString("video",""))
+                    if(data.has("audio"))"Handle the request in the attached speech, using the photo or video if present. Ask for another recording if unclear." else "User input is the attached video, including its audio.",
+                    "appliance",data.optString("image",""),data.optString("audio",""),data.optString("video",""))
                 check(reply.optBoolean("ok"))
                 val raw=reply.optString("text")
                 val decodedReply=runCatching {dev.puck.core.MuseReply.decodeAppliance(row.getString("id"),raw,dev.puck.MuseRuntime.get(context).replyApps())}.getOrNull()
-                val decoded=decodedReply?.request?.takeIf {data.has("audio") || it is dev.puck.core.WorkspaceRequest.ContentCard}
+                val decoded=decodedReply?.request
                 decodedReply?.mood?.let {withContext(Dispatchers.Main){mood.value=it}}
                 val text=when(decoded) {
                     is dev.puck.core.WorkspaceRequest.ContentCard -> decoded.text

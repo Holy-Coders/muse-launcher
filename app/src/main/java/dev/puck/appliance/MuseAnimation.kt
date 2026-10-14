@@ -22,7 +22,7 @@ object MuseAnimation {
                 val phase=floatArrayOf(0f,1f,0f,-1f)[frame]
                 val cell=Rect(frame*edge,row*edge,(frame+1)*edge,(row+1)*edge)
                 canvas.save();canvas.clipRect(cell);canvas.translate(cell.left+edge/2f,cell.top+edge/2f)
-                val tilt=when(row){1->phase*3f;2->phase*7f;3->phase*2f;4->-8f+phase*2f;else->phase}
+                val tilt=when(row){1->phase*3f;2->phase*7f;3->phase*2f;4->8f+phase*2f;else->phase}
                 canvas.rotate(tilt)
                 val scale=when(row){1->.92f+phase*.015f;3->.92f+phase*.03f;4->.90f;else->.92f}
                 canvas.scale(scale,if(row==4)scale*.93f else scale)

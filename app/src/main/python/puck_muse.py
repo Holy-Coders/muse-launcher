@@ -710,7 +710,7 @@ class Runtime:
                 image = base64.b64decode(image_base64, validate=True)
                 if len(image) > 4_000_000 or not image.startswith(b"\xff\xd8"):
                     raise ValueError("Invalid JPEG")
-                attachments = [{"type": "file", "mime_type": "image/jpeg", "filename": "puck-photo.jpg", "data_base64": image_base64}]
+                attachments = [{"type": "file", "mime_type": "image/jpeg", "filename": "muse-launcher-photo.jpg", "data_base64": image_base64}]
             except (ValueError, TypeError):
                 return json.dumps({"ok": False})
         if audio_base64:
@@ -718,7 +718,7 @@ class Runtime:
                 audio = base64.b64decode(audio_base64, validate=True)
                 if not 3244 <= len(audio) <= 2_000_044 or audio[:4] != b"RIFF" or audio[8:12] != b"WAVE":
                     raise ValueError("Invalid WAV")
-                attachments = (attachments or []) + [{"type": "file", "mime_type": "audio/wav", "filename": "puck-voice.wav", "data_base64": audio_base64}]
+                attachments = (attachments or []) + [{"type": "file", "mime_type": "audio/wav", "filename": "muse-launcher-voice.wav", "data_base64": audio_base64}]
             except (ValueError, TypeError):
                 return json.dumps({"ok": False})
         if video_base64:
@@ -729,7 +729,7 @@ class Runtime:
                 box_size = int.from_bytes(video[:4], "big")
                 if not 24 <= len(video) <= 8_000_000 or video[4:8] != b"ftyp" or not 16 <= box_size <= len(video):
                     raise ValueError("Invalid MP4")
-                attachments = (attachments or []) + [{"type": "file", "mime_type": "video/mp4", "filename": "puck-video.mp4", "data_base64": video_base64}]
+                attachments = (attachments or []) + [{"type": "file", "mime_type": "video/mp4", "filename": "muse-launcher-video.mp4", "data_base64": video_base64}]
             except (ValueError, TypeError):
                 return json.dumps({"ok": False, "error": "Video must be an MP4 under 8 MB"})
         # One durable device-side conversation for requests and local reports.

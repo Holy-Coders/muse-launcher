@@ -89,6 +89,12 @@ kept intact; no paid image service or developer account is required. Generic
 Muse profiles use the built-in animated companion. Profile export remains
 service-dependent; a missing export keeps the existing/fallback companion.
 
+Notifications place your avatar at the bottom-left, looking toward the bubbles
+above it. Gesture instructions live in the **Info** pop-up, keeping Home minimal.
+Standalone video sends its own audio through a locally extracted WAV alongside
+the MP4 when present; video with a separate voice question uses that recording.
+No describe-video instruction is inserted.
+
 ## Developer mode
 
 Open **Settings → Developer mode** for hardware diagnostics, Android settings,

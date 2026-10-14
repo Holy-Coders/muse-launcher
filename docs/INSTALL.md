@@ -57,3 +57,6 @@ is inserted.
 Settings → Get my Muse status update requests a check-in. Settings → Developer
 mode reveals optional hardware, Android settings and server/appliance controls.
 This does not switch on Developer mode in Muse or in Android itself.
+
+Home's **Info** button opens gesture instructions. With notifications present,
+your avatar sits bottom-left and looks toward the source-labeled bubbles above.

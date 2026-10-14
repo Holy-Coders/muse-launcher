@@ -38,3 +38,8 @@ account; Muse's own privacy and service terms apply there.
 Muse Launcher cannot remove prompts already submitted to Muse. To clear all local Muse Launcher
 content, use Android → App info → Storage → Clear data, or uninstall. Do not send
 credentials, personal screenshots or recordings with bug reports.
+
+When sending a video without a separate voice question, Muse Launcher decodes
+its embedded audio locally and sends a bounded mono WAV alongside the MP4. It
+uses no microphone for this extraction and keeps no extra audio file. This makes
+the video's own spoken input available through the voice attachment path.

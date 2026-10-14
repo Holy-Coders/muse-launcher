@@ -406,5 +406,5 @@ def test_video_attachment_validates_before_transport(monkeypatch, kind):
     result = json.loads(runtime.send("fixture", "Inspect video", "same-chat", "", photo, "", encoded))
     assert result["ok"] == (kind == "valid")
     if kind == "valid":
-        assert captured == [{"type": "file", "mime_type": "video/mp4", "filename": "puck-video.mp4", "data_base64": encoded}]
+        assert captured == [{"type": "file", "mime_type": "video/mp4", "filename": "muse-launcher-video.mp4", "data_base64": encoded}]
     else: assert not captured

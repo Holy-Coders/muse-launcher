@@ -306,6 +306,7 @@ class ApplianceEngine private constructor(val context:Context) {
             if(!row.isNull("video") && row.has("video")){
                 val file=File(store.dir,row.getString("video"));require(file.length() in 24..8_000_000)
                 data.put("video",Base64.encodeToString(file.readBytes(),Base64.NO_WRAP))
+                if(!data.has("audio"))VideoAudio.wave(file)?.let {data.put("audio",Base64.encodeToString(it,Base64.NO_WRAP))}
             }
             if(!row.isNull("photo")) data.put("image",Base64.encodeToString(File(store.dir,row.getString("photo")).readBytes(),Base64.NO_WRAP))
             val useMuse=usesMuse()
@@ -314,7 +315,7 @@ class ApplianceEngine private constructor(val context:Context) {
                 // A lost Muse outcome cannot be replayed automatically.
                 row.put("state","muse_pending");journal.writeText(row.toString())
                 reply=dev.puck.MuseRuntime.get(context).send(row.getString("id"),
-                    if(data.has("audio"))"Handle the request in the attached speech, using the photo or video if present. Ask for another recording if unclear." else "User input is the attached video, including its audio.",
+                    if(data.has("audio"))"Handle the request in the attached speech, using the photo or video if present. Ask for another recording if unclear." else "User input is the attached video.",
                     "appliance",data.optString("image",""),data.optString("audio",""),data.optString("video",""))
                 check(reply.optBoolean("ok"))
                 val raw=reply.optString("text")

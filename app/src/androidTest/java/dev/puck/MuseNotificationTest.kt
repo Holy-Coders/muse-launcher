@@ -56,7 +56,7 @@ class MuseNotificationTest {
             var fixture:MuseNotificationInbox.Entry?=null
             try {
                 scenario.onActivity {engine.status.value="Listening";listener.accept(row(c.packageName),false)}
-                assertEquals("Puck should not mirror itself",initial,inbox.entries.value)
+                assertEquals("Muse Launcher should not mirror itself",initial,inbox.entries.value)
                 scenario.onActivity {listener.accept(row(MuseNotifications.PACKAGE,Notification.FLAG_GROUP_SUMMARY),false)}
                 assertEquals("Group summary should be ignored",initial,inbox.entries.value)
                 scenario.onActivity {listener.accept(row(MuseNotifications.PACKAGE),false)}
@@ -74,6 +74,17 @@ class MuseNotificationTest {
                     return null
                 }
                 assertNotNull("Notification preview not rendered",find(ui.rootInActiveWindow))
+                fun avatar(n:android.view.accessibility.AccessibilityNodeInfo?):android.view.accessibility.AccessibilityNodeInfo? {
+                    if(n==null)return null
+                    if(n.stateDescription?.toString()=="Looking up at notifications")return n
+                    for(i in 0 until n.childCount)avatar(n.getChild(i))?.let {return it}
+                    return null
+                }
+                val avatarBounds=android.graphics.Rect().also((avatar(ui.rootInActiveWindow)?:error("Notification avatar not docked"))::getBoundsInScreen)
+                val bubbleBounds=android.graphics.Rect().also(find(ui.rootInActiveWindow)!!::getBoundsInScreen)
+                assertTrue("Avatar not at left",avatarBounds.left<60)
+                assertTrue("Notification text should be above avatar",bubbleBounds.bottom<=avatarBounds.top)
+
                 inbox.read(fixture!!.id);assertFalse(inbox.entries.value.first {it.id==fixture!!.id}.unread)
                 delay(200)
                 val node=find(ui.rootInActiveWindow)?:error("Preview missing before swipe")

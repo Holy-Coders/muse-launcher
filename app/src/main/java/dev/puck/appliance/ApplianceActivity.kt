@@ -117,6 +117,7 @@ class ApplianceActivity:ComponentActivity() {
             val raw by engine.rawKey.collectAsState()
             val pairs by engine.pairs.collectAsState()
             val observing by engine.calibrationActive.collectAsState()
+            var showInfo by remember {mutableStateOf(false)}
             val pageScroll=rememberScrollState()
             val transcriptScroll=rememberScrollState()
             var followTranscript by remember {mutableStateOf(true)}
@@ -159,6 +160,7 @@ class ApplianceActivity:ComponentActivity() {
                             Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(12.dp)) {
                             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                                 Text(portrait.name,Modifier.weight(1f),style=MaterialTheme.typography.titleMedium)
+                                TextButton(onClick={engine.cancelAvatarVoice();speech.stop();showInfo=true},modifier=Modifier.semantics {contentDescription="Avatar controls info"}){Text("Info")}
                                 TextButton(onClick={engine.cancelAvatarVoice();speech.stop();setup=true}){Text("Settings")}
                             }
                             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
@@ -225,7 +227,7 @@ class ApplianceActivity:ComponentActivity() {
                             }
                             if(photo!=null) {Text("Photo attached to your next question");TextButton(onClick={photo?.delete();engine.photo.value=null}) {Text("Remove photo")}}
                             }
-                            AvatarControl(Modifier.align(if(docked)Alignment.BottomStart else if(idle)Alignment.Center else Alignment.TopCenter).size(petSize)
+                            AvatarControl(Modifier.align(if(docked)androidx.compose.ui.AbsoluteAlignment.BottomLeft else if(idle)Alignment.Center else Alignment.TopCenter).size(petSize)
                                 .semantics {stateDescription=if(docked)"Looking up at notifications" else "Ready for input"},
                                 toggle={if(engine.avatarRecording)engine.endAvatarVoice() else startAvatarVoice()},start=::startAvatarVoice,end=engine::endAvatarVoice,
                                 camera={engine.cancelAvatarVoice();engine.cameraGesture.value++},cancel=engine::cancelAvatarVoice) {
@@ -234,7 +236,7 @@ class ApplianceActivity:ComponentActivity() {
                             }
                             }
                             }
-                            Text("Tap avatar to record · Tap again to send\nHold and release to send · Double tap for camera",style=MaterialTheme.typography.bodySmall)
+                            if(showInfo)AlertDialog(onDismissRequest={showInfo=false},title={Text("Avatar controls")},text={Text("Tap once to record, then tap again to send.\n\nHold to record and release to send. Drag away to cancel.\n\nDouble tap opens the camera.\n\nSettings includes status updates, pairing and Developer mode.")},confirmButton={TextButton(onClick={showInfo=false}){Text("Got it")}})
                             if(!interacting)OutlinedButton(onClick={
                                 if(checkSelfPermission(Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED)camera=true
                                 else permissions.launch(arrayOf(Manifest.permission.CAMERA))
@@ -622,7 +624,7 @@ class ApplianceActivity:ComponentActivity() {
     LaunchedEffect(animate,row,atlas){frame=0;while(animate && atlas!=null){kotlinx.coroutines.delay(if(row==0)500 else 220);frame=(frame+1)%6}}
     if(atlas!=null) {
         val column=if(frame<4)frame else 6-frame
-        Canvas(modifier.graphicsLayer {rotationX=if(lookUp)12f else 0f;rotationZ=if(lookUp && portrait.animationRows==4)-7f else 0f}){
+        Canvas(modifier.graphicsLayer {rotationX=if(lookUp)12f else 0f;rotationZ=if(lookUp && portrait.animationRows==4)7f else 0f}){
             val left=atlas.width*column/4;val top=atlas.height*row/portrait.animationRows
             val right=atlas.width*(column+1)/4;val bottom=atlas.height*(row+1)/portrait.animationRows
             val edge=size.minDimension.toInt()
@@ -635,7 +637,7 @@ class ApplianceActivity:ComponentActivity() {
         val tilt by androidx.compose.animation.core.animateFloatAsState(if(animate && status in ApplianceEngine.BUSY_STATES)if(raised)3f else -3f else 0f,label="Muse thought")
         Box(modifier,contentAlignment=Alignment.Center) {
             Canvas(Modifier.fillMaxSize()){drawCircle(if(mood=="concerned")Color(0xffffc28d) else if(status=="Listening")Color(0xffbde2c5) else Color(0xffabcde8),size.minDimension*.46f,alpha=if(raised).12f else .07f)}
-            Image(portraitBitmap,contentDescription=portrait.name+" Muse avatar",modifier=Modifier.fillMaxSize(.90f).graphicsLayer {translationY=bob;rotationZ=if(lookUp)-7f else tilt;rotationX=if(lookUp)15f else 0f;scaleX=if(status=="Speaking" && raised)1.035f else 1f;scaleY=scaleX},contentScale=ContentScale.Fit)
+            Image(portraitBitmap,contentDescription=portrait.name+" Muse avatar",modifier=Modifier.fillMaxSize(.90f).graphicsLayer {translationY=bob;rotationZ=if(lookUp)7f else tilt;rotationX=if(lookUp)15f else 0f;scaleX=if(status=="Speaking" && raised)1.035f else 1f;scaleY=scaleX},contentScale=ContentScale.Fit)
         }
         return
     }

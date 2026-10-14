@@ -1,6 +1,7 @@
 package dev.puck
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +21,21 @@ import org.junit.runner.RunWith
 class AvatarControlTest {
     @get:Rule val compose=createComposeRule()
     private val label="Avatar: tap to record, tap again to send; hold and release to send; double tap for camera"
+    @Test fun movingAvatarForCaptionsKeepsTheOriginalHoldBounds() {
+        var shifted by mutableStateOf(false)
+        var starts=0;var ends=0;var cancels=0
+        compose.setContent {MaterialTheme {
+            AvatarControl(Modifier.offset(y=if(shifted)160.dp else 0.dp).size(200.dp),{},
+                {starts++;shifted=true},{ends++},{},{cancels++}){Text("Fixture Muse")}
+        }}
+        val avatar=compose.onNodeWithContentDescription(label)
+        val initial=avatar.fetchSemanticsNode().boundsInRoot.center
+        avatar.performTouchInput {down(center)}
+        Thread.sleep(600);compose.waitForIdle()
+        val moved=avatar.fetchSemanticsNode().boundsInRoot
+        avatar.performTouchInput {moveTo(Offset(initial.x-moved.left,initial.y-moved.top));up()}
+        compose.runOnIdle {assertEquals(1,starts);assertEquals(1,ends);assertEquals(0,cancels)}
+    }
     @Test fun singleDoubleHoldAndCancelDispatchOnlyTheirIntendedEffects() {
         var toggles=0;var starts=0;var ends=0;var cameras=0;var cancelled=0
         var visible by mutableStateOf(true)
@@ -41,8 +57,8 @@ class AvatarControlTest {
         avatar.performTouchInput {cancel()}
         compose.waitForIdle()
         compose.runOnIdle {assertEquals(2,starts);assertEquals(1,ends);assertEquals(1,cancelled)}
-        avatar.performTouchInput {click()}
-        // Leaving the composition must cancel the pending delayed single tap.
+        avatar.performTouchInput {down(center)}
+        // Leaving the composition cancels an unfinished press rather than submitting it.
         compose.runOnIdle {visible=false}
         Thread.sleep(450);compose.waitForIdle()
         compose.runOnIdle {assertEquals(1,toggles)}

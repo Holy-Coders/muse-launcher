@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <!-- Retain the legacy code for maintenance without duplicate public Home entries. -->
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter tools:node="removeAll" />
+        </activity>
+        <activity-alias android:name=".VoiceEntry" android:enabled="false" tools:replace="android:enabled" />
+    </application>
+</manifest>

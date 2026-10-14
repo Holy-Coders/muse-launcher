@@ -1,0 +1,38 @@
+name: Android checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: android-actions/setup-android@v3
+      - name: Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Pinned dependencies and offline protocol tests
+        run: |
+          python -m pip install cryptography==42.0.8 websockets==13.1 pytest==8.3.5
+          PYTHONPATH=app/src/main/python python -m pytest tests/muse -q
+      - name: Fetch licensed model with checksum verification
+        run: python scripts/fetch-models.py
+      - name: Build and lint
+        run: |
+          chmod +x gradlew scripts/python-build.sh
+          ./gradlew :core:test :app:assembleDebug :app:assembleDebugAndroidTest :app:assembleRelease :app:lintDebug :app:lintRelease
+      - name: Export source
+        run: python scripts/source-release.py dist/muse-launcher-source.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: muse-launcher-build-review
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release-unsigned.apk
+            dist/muse-launcher-source.zip

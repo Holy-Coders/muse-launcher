@@ -1,0 +1,1 @@
+<resources><string name="navigation_guard_description">Keeps this dedicated phone on Muse Launcher except for apps you request and Google Voice. Uses only foreground package changes, never screen contents, notifications, keys or audio. Protected Muse Launcher setup can pause it for maintenance.</string></resources>
